@@ -2,7 +2,8 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as http from 'http';
 import WebSocket from 'ws';
-import PlayerController from '../controllers/playerController'
+import PlayerController from '../controllers/playerController';
+import RoomController from '../controllers/roomController';
 
 export const httpServer = http.createServer(function (req, res) {
   const __dirname = path.resolve(path.dirname(''));
@@ -22,6 +23,7 @@ export const httpServer = http.createServer(function (req, res) {
 const wss = new WebSocket.Server({ server: httpServer });
 
 const playerController = new PlayerController();
+const roomController = new RoomController();
 
 wss.on('connection', (ws: WebSocket) => {
   console.log('New WebSocket connection established');
@@ -33,17 +35,18 @@ wss.on('connection', (ws: WebSocket) => {
       case 'reg':
         playerController.registerPlayer(ws, request);
         break;
+      case 'create_room':
+        roomController.createRoom(ws);
+        break;
+      case 'add_player_to_room':
+        roomController.addPlayerToRoom(ws, request);
+        break;
       default:
         console.log('Unknown request type:', request.type);
-        
     }
   });
 
   ws.on('close', () => {
-    // Handle WebSocket connection closure
     console.log('WebSocket connection closed');
-    // Implement your own cleanup logic if needed
   });
 });
-
-

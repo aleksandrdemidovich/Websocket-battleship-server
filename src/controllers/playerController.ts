@@ -1,5 +1,5 @@
 import WebSocket from 'ws';
-import { savePlayerData } from '../db/db';
+import { savePlayerData, getRoomData, saveRoomData } from '../db/db';
 
 class PlayerController {
   registerPlayer(ws: WebSocket, request: any) {
