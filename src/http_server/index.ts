@@ -1,17 +1,11 @@
 import * as fs from 'fs';
-import * as path from 'path';
 import * as http from 'http';
+import * as path from 'path';
 import WebSocket from 'ws';
 import PlayerController from '../controllers/playerController';
 import RoomController from '../controllers/roomController';
 import ShipController from '../controllers/shipController';
 // import GameController from '../controllers/gameController';
-import {
-  saveRoomData,
-  getRoomData,
-  savePlayerData,
-  getPlayerData,
-} from '../db/db';
 
 export const httpServer = http.createServer(function (req, res) {
   const __dirname = path.resolve(path.dirname(''));
@@ -43,6 +37,7 @@ wss.on('connection', (ws: WebSocket) => {
 
   ws.on('message', (message: string) => {
     const request = JSON.parse(message);
+
 
     switch (request.type) {
       case 'reg':

@@ -40,12 +40,18 @@ class RoomController {
 
     room?.roomUsers.forEach((user) => {
       const ws2 = connections[user.name];
-      this.sendRoomResponse(ws2, 'create_game', {
-        idGame: room?.roomId,
-        idPlayer: user.index,
-      });
-    });
 
+      ws2.send(
+        JSON.stringify({
+          type: 'create_game',
+          data: JSON.stringify({
+            idGame: room?.roomId,
+            idPlayer: user.index,
+          }),
+          id: 0,
+        }),
+      );
+    });
   }
 
   createGame(ws: WebSocket) {
@@ -56,10 +62,7 @@ class RoomController {
     // Logic for updating room state
   }
 
-  private sendRoomResponse(ws: WebSocket, type: string, data: any) {
-    const validData = JSON.stringify(data);
-    ws.send(JSON.stringify({ type, data: validData, id: 0 }));
-  }
+
 }
 
 export default RoomController;

@@ -10,12 +10,17 @@ class PlayerController {
       password,
     });
 
-    this.sendPersonalResponse(ws, 'reg', {
-      name,
-      index: user.index,
-      error: false,
-      errorText: '',
-    });
+    ws.send(
+      JSON.stringify({
+        type: 'reg',
+        data: JSON.stringify({
+          name,
+          index: user.index,
+          error: false,
+          errorText: '',
+        }),
+      }),
+    );
 
     const allRooms = getAllRoomsData();
 
@@ -32,13 +37,6 @@ class PlayerController {
 
   updateWinners(ws: WebSocket, request: any) {
     // Logic for updating winners
-  }
-
-  private sendPersonalResponse(ws: WebSocket, type: string, data: any) {
-    const response = { type, data };
-    // console.log(JSON.stringify(response));
-
-    ws.send(JSON.stringify({ type, data: JSON.stringify(data), id: 0 }));
   }
 }
 
