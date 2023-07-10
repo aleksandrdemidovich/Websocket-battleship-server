@@ -4,9 +4,9 @@ interface PlayerData {
   index?: number;
 }
 
-interface RoomData {
+export interface RoomData {
   roomId: number;
-  roomUsers: { name: string; index: number }[];
+  roomUsers: { name: string; index: number; ships?: any }[];
 }
 
 const playerDataStore: PlayerData[] = [];
@@ -43,4 +43,16 @@ export const addUserToRoom = (username: string, roomId: number) => {
 
 export const getAllRoomsData = (): RoomData[] => {
   return Object.values(roomDataStore);
+};
+
+export const addShipsToUser = (
+  indexPlayer: number,
+  roomId: number,
+  ships: any,
+) => {
+  const room = getRoomData(roomId);
+  if (room) {
+    room.roomUsers[indexPlayer] = { ...room.roomUsers[indexPlayer], ships };
+    return room;
+  }
 };

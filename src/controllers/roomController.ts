@@ -32,11 +32,16 @@ class RoomController {
     );
   }
 
+  //refactor this because can game yourself
   addPlayerToRoom(ws: WebSocket, request: any, userName: string) {
     const { indexRoom } = JSON.parse(request.data);
 
     addUserToRoom(userName, indexRoom);
     const room = getRoomData(indexRoom);
+
+    //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    if (!room) return;
+    if (room.roomUsers.length < 2) return;
 
     room?.roomUsers.forEach((user) => {
       const ws2 = connections[user.name];
@@ -52,6 +57,7 @@ class RoomController {
         }),
       );
     });
+    // console.log(room?.roomUsers);
   }
 
   createGame(ws: WebSocket) {
@@ -61,8 +67,6 @@ class RoomController {
   updateRoomState(ws: WebSocket, request: any) {
     // Logic for updating room state
   }
-
-
 }
 
 export default RoomController;

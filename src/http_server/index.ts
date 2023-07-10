@@ -38,7 +38,6 @@ wss.on('connection', (ws: WebSocket) => {
   ws.on('message', (message: string) => {
     const request = JSON.parse(message);
 
-
     switch (request.type) {
       case 'reg':
         userName = playerController.registerPlayer(ws, request);
