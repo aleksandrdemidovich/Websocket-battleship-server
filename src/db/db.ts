@@ -6,7 +6,16 @@ interface PlayerData {
 
 export interface RoomData {
   roomId: number;
-  roomUsers: { name: string; index: number; ships?: any }[];
+  roomUsers: { name: string; index: number; ships?: Ship[] }[];
+  turn?: boolean;
+}
+
+export interface Ship {
+  position: { x: number; y: number };
+  direction: boolean;
+  length: number;
+  type: 'small' | 'medium' | 'large' | 'huge';
+  hits?: boolean[];
 }
 
 const playerDataStore: PlayerData[] = [];
@@ -36,6 +45,7 @@ export const addUserToRoom = (username: string, roomId: number) => {
   const user = getPlayerData(username);
   if (user) {
     const room = roomDataStore.find((room, index) => index === roomId);
+    if (room?.roomUsers.filter((user) => user.name === username).length) return;
     room?.roomUsers.push({ name: user.name, index: user.index! });
     return room;
   }
@@ -55,4 +65,52 @@ export const addShipsToUser = (
     room.roomUsers[indexPlayer] = { ...room.roomUsers[indexPlayer], ships };
     return room;
   }
+};
+
+export const toggleTurn = (roomId: number) => {
+  const room = getRoomData(roomId);
+  if (room) {
+    roomDataStore[roomId] = { ...room, turn: !room.turn };
+  }
+};
+
+export const checkAttack = (
+  battleshipArray: Ship[],
+  attackPosition: { x: number; y: number },
+  gameId: number,
+  userId: number,
+) => {
+  if (!roomDataStore[gameId].roomUsers[userId].ships) return;
+
+  for (const ship of battleshipArray) {
+    const { position, direction, length } = ship;
+
+    if (direction) {
+      for (let i = position.y; i < position.y + length; i++) {
+        if (position.x === attackPosition.x && i === attackPosition.y) {
+          ship.length--;
+          console.log(ship.length);
+          if (ship.length === 0) {
+            return 'killed';
+          }
+
+          return 'shot';
+        }
+      }
+    } else {
+      for (let i = position.x; i < position.x + length; i++) {
+        if (i === attackPosition.x && position.y === attackPosition.y) {
+          ship.length--;
+
+          if (ship.length === 0) {
+            return 'killed';
+          }
+
+          return 'shot';
+        }
+      }
+    }
+  }
+
+  return 'miss';
 };

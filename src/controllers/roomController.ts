@@ -32,21 +32,16 @@ class RoomController {
     );
   }
 
-  //refactor this because can game yourself
   addPlayerToRoom(ws: WebSocket, request: any, userName: string) {
     const { indexRoom } = JSON.parse(request.data);
 
     addUserToRoom(userName, indexRoom);
     const room = getRoomData(indexRoom);
 
-    //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    if (!room) return;
-    if (room.roomUsers.length < 2) return;
-
     room?.roomUsers.forEach((user) => {
-      const ws2 = connections[user.name];
+      const userWS = connections[user.name];
 
-      ws2.send(
+      userWS.send(
         JSON.stringify({
           type: 'create_game',
           data: JSON.stringify({
@@ -57,7 +52,6 @@ class RoomController {
         }),
       );
     });
-    // console.log(room?.roomUsers);
   }
 
   createGame(ws: WebSocket) {

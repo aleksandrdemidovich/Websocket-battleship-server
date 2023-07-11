@@ -5,7 +5,6 @@ import GameController from './gameController';
 const gameController = new GameController();
 class ShipController {
   addShips(ws: WebSocket, request: any) {
-    // Logic for adding ships to the game board
     const { gameId, ships, indexPlayer } = JSON.parse(request.data);
     const room = addShipsToUser(indexPlayer, gameId, ships);
 
