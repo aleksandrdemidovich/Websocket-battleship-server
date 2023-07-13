@@ -34,6 +34,7 @@ export const savePlayerData = (data: PlayerData) => {
 
 export const getPlayerData = (name: string): PlayerData | undefined => {
   const index = playerDataStore.findIndex((player) => player.name === name);
+  if (index === -1) return undefined;
   return { ...playerDataStore[index], index: index };
 };
 
@@ -143,13 +144,15 @@ export const checkWin = (gameId: number) => {
 };
 
 export const updateWinners = (name: string) => {
-  const playerIndex = winnersDataStore.findIndex((winner) => winner.name === name);
+  const playerIndex = winnersDataStore.findIndex(
+    (winner) => winner.name === name,
+  );
   if (playerIndex === -1) {
     winnersDataStore.push({ name, wins: 1 });
   } else {
     winnersDataStore[playerIndex].wins += 1;
   }
-}
+};
 
 export const getWinners = () => {
   return winnersDataStore;

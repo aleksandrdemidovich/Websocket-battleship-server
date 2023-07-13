@@ -4,6 +4,7 @@ import {
   getAllRoomsData,
   getRoomData,
   getWinners,
+  getPlayerData,
 } from '../db/db';
 import { connections } from '../http_server';
 
@@ -11,22 +12,52 @@ class PlayerController {
   registerPlayer(ws: WebSocket, request: any) {
     const { name, password } = JSON.parse(request.data);
 
-    const user = savePlayerData({
-      name,
-      password,
-    });
+    const user = getPlayerData(name);
 
-    ws.send(
-      JSON.stringify({
-        type: 'reg',
-        data: JSON.stringify({
-          name,
-          index: user.index,
-          error: false,
-          errorText: '',
+    if (user && user.password === password) {
+      ws.send(
+        JSON.stringify({
+          type: 'reg',
+          data: JSON.stringify({
+            name,
+            index: user.index,
+            error: false,
+            errorText: '',
+          }),
         }),
-      }),
-    );
+      );
+    } else if (user && user.password !== password) {
+      ws.send(
+        JSON.stringify({
+          type: 'reg',
+          data: JSON.stringify({
+            name,
+            index: user!.index,
+            error: true,
+            errorText: 'Incorrect password',
+          }),
+        }),
+      );
+    } else {
+      if (user === undefined) {
+        const newUser = savePlayerData({
+          name,
+          password,
+        });
+
+        ws.send(
+          JSON.stringify({
+            type: 'reg',
+            data: JSON.stringify({
+              name,
+              index: newUser.index,
+              error: false,
+              errorText: '',
+            }),
+          }),
+        );
+      }
+    }
 
     const allRooms = getAllRoomsData();
 
