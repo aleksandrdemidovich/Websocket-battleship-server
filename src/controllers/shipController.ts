@@ -1,16 +1,15 @@
-import WebSocket from 'ws';
 import { addShipsToUser } from '../db/db';
 import GameController from './gameController';
 
 const gameController = new GameController();
 class ShipController {
-  addShips(ws: WebSocket, request: any) {
+  addShips(request: any) {
     const { gameId, ships, indexPlayer } = JSON.parse(request.data);
     const room = addShipsToUser(indexPlayer, gameId, ships);
 
     const result = this.checkShips(room?.roomUsers);
     if (result) {
-      gameController.startGame(ws, room!);
+      gameController.startGame(room!);
     }
   }
   checkShips(roomUsers: any) {

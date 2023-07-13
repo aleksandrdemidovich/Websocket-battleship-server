@@ -72,11 +72,10 @@ class PlayerController {
     return name;
   }
 
-  updateWinners(indexPlayer: number, gameId: number) {
+  updateWinners(gameId: number) {
     const room = getRoomData(gameId);
-    const winner = room?.roomUsers[indexPlayer];
     const wins = getWinners();
-    room?.roomUsers.forEach((user) => {
+    room?.roomUsers.forEach((user: any) => {
       const userWS = connections[user.name];
       userWS.send(
         JSON.stringify({

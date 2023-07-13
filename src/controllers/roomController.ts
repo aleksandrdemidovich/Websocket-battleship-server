@@ -32,13 +32,13 @@ class RoomController {
     );
   }
 
-  addPlayerToRoom(ws: WebSocket, request: any, userName: string) {
+  addPlayerToRoom(request: any, userName: string) {
     const { indexRoom } = JSON.parse(request.data);
 
     addUserToRoom(userName, indexRoom);
     const room = getRoomData(indexRoom);
 
-    room?.roomUsers.forEach((user) => {
+    room?.roomUsers.forEach((user: any) => {
       const userWS = connections[user.name];
 
       userWS.send(
@@ -52,14 +52,6 @@ class RoomController {
         }),
       );
     });
-  }
-
-  createGame(ws: WebSocket) {
-    // this.sendRoomResponse(ws, 'create_game', { idGame: 0, idPlayer: 1 });
-  }
-
-  updateRoomState(ws: WebSocket, request: any) {
-    // Logic for updating room state
   }
 }
 

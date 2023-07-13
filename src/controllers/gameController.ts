@@ -1,9 +1,7 @@
-import WebSocket from 'ws';
 import {
   RoomData,
   toggleTurn,
   getRoomData,
-  Ship,
   checkAttack,
   checkWin,
   updateWinners,
@@ -13,7 +11,7 @@ import PlayerController from './playerController';
 
 const playerController = new PlayerController();
 class GameController {
-  startGame(ws: WebSocket, room: RoomData) {
+  startGame(room: RoomData) {
     room.roomUsers.forEach((user) => {
       const userWS = connections[user.name];
       userWS.send(
@@ -24,10 +22,10 @@ class GameController {
         }),
       );
     });
-    this.changeTurn(ws, room.roomId);
+    this.changeTurn(room.roomId);
   }
 
-  attack(ws: WebSocket, request: any) {
+  attack(request: any) {
     const { x, y, gameId, indexPlayer } = JSON.parse(request.data);
 
     const room = getRoomData(gameId);
@@ -41,7 +39,7 @@ class GameController {
     const userIdForAttack = indexPlayer === 0 ? 1 : 0;
 
     const status = checkAttack(
-      room?.roomUsers[userIdForAttack].ships!,
+      room?.roomUsers[userIdForAttack]?.ships!,
       {
         x,
         y,
@@ -49,17 +47,16 @@ class GameController {
       gameId,
       userIdForAttack,
     );
-    this.feedbackAttack(ws, x, y, status!, indexPlayer, gameId);
+    this.feedbackAttack(x, y, status!, indexPlayer, gameId);
 
     if (checkWin(gameId)) {
       this.finishGame(indexPlayer, gameId);
     }
 
-    this.changeTurn(ws, gameId);
+    this.changeTurn(gameId);
   }
 
   feedbackAttack(
-    ws: WebSocket,
     x: number,
     y: number,
     status: string,
@@ -72,7 +69,7 @@ class GameController {
     };
 
     const room = getRoomData(gameId);
-    room?.roomUsers.forEach((user) => {
+    room?.roomUsers.forEach((user: any) => {
       const userWS = connections[user.name];
       userWS.send(
         JSON.stringify({
@@ -84,7 +81,7 @@ class GameController {
     });
   }
 
-  randomAttack(ws: WebSocket, request: any) {
+  randomAttack(request: any) {
     const { gameId, indexPlayer } = JSON.parse(request.data);
 
     const x = Math.floor(Math.random() * 10);
@@ -98,12 +95,12 @@ class GameController {
         indexPlayer,
       }),
     };
-    this.attack(ws, data);
+    this.attack(data);
   }
 
-  changeTurn(ws: WebSocket, roomId: number) {
+  changeTurn(roomId: number) {
     const room = getRoomData(roomId);
-    room?.roomUsers.forEach((user) => {
+    room?.roomUsers.forEach((user: any) => {
       const userWS = connections[user.name];
       userWS.send(
         JSON.stringify({
@@ -118,7 +115,7 @@ class GameController {
 
   finishGame(indexPlayer: number, gameId: number) {
     const room = getRoomData(gameId);
-    room?.roomUsers.forEach((user) => {
+    room?.roomUsers.forEach((user: any) => {
       const userWS = connections[user.name];
       userWS.send(
         JSON.stringify({
@@ -126,11 +123,11 @@ class GameController {
           data: JSON.stringify({ winPlayer: indexPlayer }),
           id: 0,
         }),
-        );
+      );
     });
     const winner = room?.roomUsers[indexPlayer];
     updateWinners(winner?.name!);
-    playerController.updateWinners(indexPlayer, gameId)
+    playerController.updateWinners(gameId);
   }
 }
 

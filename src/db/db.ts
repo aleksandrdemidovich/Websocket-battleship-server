@@ -32,7 +32,7 @@ export const savePlayerData = (data: PlayerData) => {
   return { ...data, index: playerDataStore.length - 1 };
 };
 
-export const getPlayerData = (name: string): PlayerData | undefined => {
+export const getPlayerData = (name: string): PlayerData | undefined | any => {
   const index = playerDataStore.findIndex((player) => player.name === name);
   if (index === -1) return undefined;
   return { ...playerDataStore[index], index: index };
@@ -43,7 +43,7 @@ export const saveRoomData = (roomId: number, data: RoomData) => {
   return { ...data, index: roomDataStore.length - 1, roomId };
 };
 
-export const getRoomData = (roomId: number): RoomData | undefined => {
+export const getRoomData = (roomId: number): RoomData | undefined | any => {
   const index = roomDataStore.findIndex((room) => room.roomId === roomId);
   return { ...roomDataStore[index], roomId: index };
 };
@@ -51,7 +51,7 @@ export const getRoomData = (roomId: number): RoomData | undefined => {
 export const addUserToRoom = (username: string, roomId: number) => {
   const user = getPlayerData(username);
   if (user) {
-    const room = roomDataStore.find((room, index) => index === roomId);
+    const room = roomDataStore.find((_room, index) => index === roomId);
     if (room?.roomUsers.filter((user) => user.name === username).length) return;
     room?.roomUsers.push({ name: user.name, index: user.index! });
     return room;
@@ -93,7 +93,7 @@ export const checkAttack = (
   gameId: number,
   userId: number,
 ) => {
-  if (!roomDataStore[gameId].roomUsers[userId].ships) return;
+  if (!roomDataStore[gameId]!.roomUsers[userId]!.ships) return;
 
   for (const ship of battleshipArray) {
     const { position, direction, length } = ship;
@@ -133,8 +133,10 @@ export const checkWin = (gameId: number) => {
 
   if (
     room.roomUsers.some(
-      (user) =>
-        user.ships?.every((ship) => ship.hits?.every((hit) => hit === true)),
+      (user: any) =>
+        user.ships?.every(
+          (ship: Ship) => ship.hits?.every((hit) => hit === true),
+        ),
     )
   ) {
     return true;
@@ -150,7 +152,7 @@ export const updateWinners = (name: string) => {
   if (playerIndex === -1) {
     winnersDataStore.push({ name, wins: 1 });
   } else {
-    winnersDataStore[playerIndex].wins += 1;
+    winnersDataStore[playerIndex]!.wins += 1;
   }
 };
 
