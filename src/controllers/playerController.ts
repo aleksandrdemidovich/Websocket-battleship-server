@@ -1,5 +1,11 @@
 import WebSocket from 'ws';
-import { savePlayerData, getAllRoomsData } from '../db/db';
+import {
+  savePlayerData,
+  getAllRoomsData,
+  getRoomData,
+  getWinners,
+} from '../db/db';
+import { connections } from '../http_server';
 
 class PlayerController {
   registerPlayer(ws: WebSocket, request: any) {
@@ -35,8 +41,20 @@ class PlayerController {
     return name;
   }
 
-  updateWinners(ws: WebSocket, request: any) {
-    // Logic for updating winners
+  updateWinners(indexPlayer: number, gameId: number) {
+    const room = getRoomData(gameId);
+    const winner = room?.roomUsers[indexPlayer];
+    const wins = getWinners();
+    room?.roomUsers.forEach((user) => {
+      const userWS = connections[user.name];
+      userWS.send(
+        JSON.stringify({
+          type: 'update_winners',
+          data: JSON.stringify(wins),
+          id: 0,
+        }),
+      );
+    });
   }
 }
 

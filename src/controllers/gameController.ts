@@ -1,11 +1,19 @@
 import WebSocket from 'ws';
-import { RoomData, toggleTurn, getRoomData, Ship, checkAttack } from '../db/db';
+import {
+  RoomData,
+  toggleTurn,
+  getRoomData,
+  Ship,
+  checkAttack,
+  checkWin,
+  updateWinners,
+} from '../db/db';
 import { connections } from '../http_server/index';
-import ShipController from './shipController';
+import PlayerController from './playerController';
 
+const playerController = new PlayerController();
 class GameController {
   startGame(ws: WebSocket, room: RoomData) {
-    this.changeTurn(ws, room.roomId);
     room.roomUsers.forEach((user) => {
       const userWS = connections[user.name];
       userWS.send(
@@ -16,13 +24,20 @@ class GameController {
         }),
       );
     });
+    this.changeTurn(ws, room.roomId);
   }
 
-  // Handle player's attack request
   attack(ws: WebSocket, request: any) {
     const { x, y, gameId, indexPlayer } = JSON.parse(request.data);
 
     const room = getRoomData(gameId);
+
+    if (
+      (room?.turn === false && indexPlayer === 1) ||
+      (room?.turn === true && indexPlayer === 0)
+    )
+      return;
+
     const userIdForAttack = indexPlayer === 0 ? 1 : 0;
 
     const status = checkAttack(
@@ -34,7 +49,12 @@ class GameController {
       gameId,
       userIdForAttack,
     );
-    this.feedbackAttack(ws, x, y, status!, indexPlayer);
+    this.feedbackAttack(ws, x, y, status!, indexPlayer, gameId);
+
+    if (checkWin(gameId)) {
+      this.finishGame(indexPlayer, gameId);
+    }
+
     this.changeTurn(ws, gameId);
   }
 
@@ -44,23 +64,26 @@ class GameController {
     y: number,
     status: string,
     currentPlayer: number,
+    gameId: number,
   ) {
     const position = {
       x: x,
       y: y,
     };
-    console.log(status);
 
-    ws.send(
-      JSON.stringify({
-        type: 'attack',
-        data: JSON.stringify({ position, status, currentPlayer }),
-        id: 0,
-      }),
-    );
+    const room = getRoomData(gameId);
+    room?.roomUsers.forEach((user) => {
+      const userWS = connections[user.name];
+      userWS.send(
+        JSON.stringify({
+          type: 'attack',
+          data: JSON.stringify({ position, status, currentPlayer }),
+          id: 0,
+        }),
+      );
+    });
   }
 
-  // Handle random attack request
   randomAttack(ws: WebSocket, request: any) {
     const { gameId, indexPlayer } = JSON.parse(request.data);
 
@@ -78,7 +101,6 @@ class GameController {
     this.attack(ws, data);
   }
 
-  // Handle changing player's turn request
   changeTurn(ws: WebSocket, roomId: number) {
     const room = getRoomData(roomId);
     room?.roomUsers.forEach((user) => {
@@ -94,9 +116,21 @@ class GameController {
     toggleTurn(roomId);
   }
 
-  // Handle finishing the game request
-  finishGame(ws: WebSocket, request: any) {
-    // Logic for finishing the game
+  finishGame(indexPlayer: number, gameId: number) {
+    const room = getRoomData(gameId);
+    room?.roomUsers.forEach((user) => {
+      const userWS = connections[user.name];
+      userWS.send(
+        JSON.stringify({
+          type: 'finish',
+          data: JSON.stringify({ winPlayer: indexPlayer }),
+          id: 0,
+        }),
+        );
+    });
+    const winner = room?.roomUsers[indexPlayer];
+    updateWinners(winner?.name!);
+    playerController.updateWinners(indexPlayer, gameId)
   }
 }
 

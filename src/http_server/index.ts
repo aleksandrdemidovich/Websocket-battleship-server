@@ -56,10 +56,11 @@ wss.on('connection', (ws: WebSocket) => {
         break;
       case 'add_ships':
         shipController.addShips(ws, request);
+        break;
       case 'attack':
         gameController.attack(ws, request);
         break;
-        case 'randomAttack':
+      case 'randomAttack':
         gameController.randomAttack(ws, request);
         break;
       default:

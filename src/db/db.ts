@@ -10,6 +10,11 @@ export interface RoomData {
   turn?: boolean;
 }
 
+type Winner = {
+  name: string;
+  wins: number;
+};
+
 export interface Ship {
   position: { x: number; y: number };
   direction: boolean;
@@ -20,6 +25,7 @@ export interface Ship {
 
 const playerDataStore: PlayerData[] = [];
 const roomDataStore: RoomData[] = [];
+const winnersDataStore: Winner[] = [];
 
 export const savePlayerData = (data: PlayerData) => {
   playerDataStore.push(data);
@@ -62,7 +68,13 @@ export const addShipsToUser = (
 ) => {
   const room = getRoomData(roomId);
   if (room) {
-    room.roomUsers[indexPlayer] = { ...room.roomUsers[indexPlayer], ships };
+    room.roomUsers[indexPlayer] = {
+      ...room.roomUsers[indexPlayer],
+      ships: ships.map((ship: Ship) => ({
+        ...ship,
+        hits: new Array(ship.length).fill(false),
+      })),
+    };
     return room;
   }
 };
@@ -88,9 +100,8 @@ export const checkAttack = (
     if (direction) {
       for (let i = position.y; i < position.y + length; i++) {
         if (position.x === attackPosition.x && i === attackPosition.y) {
-          ship.length--;
-          console.log(ship.length);
-          if (ship.length === 0) {
+          ship.hits![i - position.y] = true;
+          if (ship.hits?.every((hit) => hit === true)) {
             return 'killed';
           }
 
@@ -100,9 +111,9 @@ export const checkAttack = (
     } else {
       for (let i = position.x; i < position.x + length; i++) {
         if (i === attackPosition.x && position.y === attackPosition.y) {
-          ship.length--;
+          ship.hits![i - position.x] = true;
 
-          if (ship.length === 0) {
+          if (ship.hits?.every((hit) => hit === true)) {
             return 'killed';
           }
 
@@ -113,4 +124,33 @@ export const checkAttack = (
   }
 
   return 'miss';
+};
+
+export const checkWin = (gameId: number) => {
+  const room = getRoomData(gameId);
+  if (!room) return;
+
+  if (
+    room.roomUsers.some(
+      (user) =>
+        user.ships?.every((ship) => ship.hits?.every((hit) => hit === true)),
+    )
+  ) {
+    return true;
+  }
+
+  return false;
+};
+
+export const updateWinners = (name: string) => {
+  const playerIndex = winnersDataStore.findIndex((winner) => winner.name === name);
+  if (playerIndex === -1) {
+    winnersDataStore.push({ name, wins: 1 });
+  } else {
+    winnersDataStore[playerIndex].wins += 1;
+  }
+}
+
+export const getWinners = () => {
+  return winnersDataStore;
 };
