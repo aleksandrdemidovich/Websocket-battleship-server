@@ -5,6 +5,7 @@ const gameController = new GameController();
 class ShipController {
   addShips(request: any) {
     const { gameId, ships, indexPlayer } = JSON.parse(request.data);
+
     const room = addShipsToUser(indexPlayer, gameId, ships);
 
     const result = this.checkShips(room?.roomUsers);

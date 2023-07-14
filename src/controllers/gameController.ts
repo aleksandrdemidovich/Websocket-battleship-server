@@ -1,3 +1,4 @@
+import WebSocket from 'ws';
 import {
   RoomData,
   toggleTurn,
@@ -5,6 +6,8 @@ import {
   checkAttack,
   checkWin,
   updateWinners,
+  clearRoomData,
+  getAllRoomsData
 } from '../db/db';
 import { connections } from '../http_server/index';
 import PlayerController from './playerController';
@@ -14,18 +17,20 @@ class GameController {
   startGame(room: RoomData) {
     room.roomUsers.forEach((user) => {
       const userWS = connections[user.name];
-      userWS.send(
-        JSON.stringify({
-          type: 'start_game',
-          data: JSON.stringify({ ships: user.ships, id: user.index }),
-          id: 0,
-        }),
-      );
+      if (userWS) {
+        userWS.send(
+          JSON.stringify({
+            type: 'start_game',
+            data: JSON.stringify({ ships: user.ships, id: user.index }),
+            id: 0,
+          }),
+        );
+      }
     });
     this.changeTurn(room.roomId);
   }
 
-  attack(request: any) {
+  attack(ws: WebSocket, request: any) {
     const { x, y, gameId, indexPlayer } = JSON.parse(request.data);
 
     const room = getRoomData(gameId);
@@ -47,13 +52,20 @@ class GameController {
       gameId,
       userIdForAttack,
     );
+    this.changeTurn(gameId);
     this.feedbackAttack(x, y, status!, indexPlayer, gameId);
 
     if (checkWin(gameId)) {
-      this.finishGame(indexPlayer, gameId);
+      this.finishGame(ws, indexPlayer, gameId);
+      return;
     }
+    const bot = room.roomUsers.find((user: any) => user.name === 'Bot');
 
-    this.changeTurn(gameId);
+    if (bot) {
+      this.randomAttack(ws, {
+        data: JSON.stringify({ gameId: gameId, indexPlayer: bot.index }),
+      });
+    }
   }
 
   feedbackAttack(
@@ -71,17 +83,19 @@ class GameController {
     const room = getRoomData(gameId);
     room?.roomUsers.forEach((user: any) => {
       const userWS = connections[user.name];
-      userWS.send(
-        JSON.stringify({
-          type: 'attack',
-          data: JSON.stringify({ position, status, currentPlayer }),
-          id: 0,
-        }),
-      );
+      if (userWS) {
+        userWS.send(
+          JSON.stringify({
+            type: 'attack',
+            data: JSON.stringify({ position, status, currentPlayer }),
+            id: 0,
+          }),
+        );
+      }
     });
   }
 
-  randomAttack(request: any) {
+  randomAttack(ws: WebSocket, request: any) {
     const { gameId, indexPlayer } = JSON.parse(request.data);
 
     const x = Math.floor(Math.random() * 10);
@@ -95,36 +109,57 @@ class GameController {
         indexPlayer,
       }),
     };
-    this.attack(data);
+    this.attack(ws, data);
   }
 
   changeTurn(roomId: number) {
     const room = getRoomData(roomId);
+
     room?.roomUsers.forEach((user: any) => {
       const userWS = connections[user.name];
-      userWS.send(
-        JSON.stringify({
-          type: 'turn',
-          data: JSON.stringify({ currentPlayer: room.turn === true ? 0 : 1 }),
-          id: 0,
-        }),
-      );
+      if (userWS) {
+        userWS.send(
+          JSON.stringify({
+            type: 'turn',
+            data: JSON.stringify({ currentPlayer: room.turn === true ? 0 : 1 }),
+            id: 0,
+          }),
+        );
+      }
     });
     toggleTurn(roomId);
   }
 
-  finishGame(indexPlayer: number, gameId: number) {
+  finishGame(ws: WebSocket, indexPlayer: number, gameId: number) {
     const room = getRoomData(gameId);
     room?.roomUsers.forEach((user: any) => {
       const userWS = connections[user.name];
-      userWS.send(
-        JSON.stringify({
-          type: 'finish',
-          data: JSON.stringify({ winPlayer: indexPlayer }),
-          id: 0,
-        }),
-      );
+      if (userWS) {
+        userWS.send(
+          JSON.stringify({
+            type: 'finish',
+            data: JSON.stringify({ winPlayer: indexPlayer }),
+            id: 0,
+          }),
+        );
+      }
     });
+
+    const bot = room.roomUsers.find((user: any) => user.name === 'Bot');
+    if (bot) {
+      clearRoomData(gameId);
+      const allRooms = getAllRoomsData();
+
+    ws.send(
+      JSON.stringify({
+        type: 'update_room',
+        data: JSON.stringify(allRooms),
+        id: 0,
+      }),
+    );
+      return;
+    };
+
     const winner = room?.roomUsers[indexPlayer];
     updateWinners(winner?.name!);
     playerController.updateWinners(gameId);

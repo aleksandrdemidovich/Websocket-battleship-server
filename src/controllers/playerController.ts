@@ -77,13 +77,15 @@ class PlayerController {
     const wins = getWinners();
     room?.roomUsers.forEach((user: any) => {
       const userWS = connections[user.name];
-      userWS.send(
-        JSON.stringify({
-          type: 'update_winners',
-          data: JSON.stringify(wins),
-          id: 0,
-        }),
-      );
+      if (userWS) {
+        userWS.send(
+          JSON.stringify({
+            type: 'update_winners',
+            data: JSON.stringify(wins),
+            id: 0,
+          }),
+        );
+      }
     });
   }
 }

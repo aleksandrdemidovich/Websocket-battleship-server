@@ -6,6 +6,7 @@ import PlayerController from '../controllers/playerController';
 import RoomController from '../controllers/roomController';
 import ShipController from '../controllers/shipController';
 import GameController from '../controllers/gameController';
+import BotController from '../controllers/botController';
 
 export const httpServer = http.createServer(function (req, res) {
   const __dirname = path.resolve(path.dirname(''));
@@ -28,6 +29,7 @@ const playerController = new PlayerController();
 const roomController = new RoomController();
 const shipController = new ShipController();
 const gameController = new GameController();
+const botController = new BotController();
 
 export const connections: any = {};
 
@@ -54,11 +56,16 @@ wss.on('connection', (ws: WebSocket) => {
         shipController.addShips(request);
         break;
       case 'attack':
-        gameController.attack(request);
+        gameController.attack(ws, request);
         break;
       case 'randomAttack':
-        gameController.randomAttack(request);
+        gameController.randomAttack(ws, request);
         break;
+      case 'single_play':
+        botController.addBotToRoom(ws);
+        console.log(request);
+        break;
+
       default:
         console.log('Unknown request type:', request.type);
     }

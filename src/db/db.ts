@@ -159,3 +159,10 @@ export const updateWinners = (name: string) => {
 export const getWinners = () => {
   return winnersDataStore;
 };
+
+export const clearRoomData = (roomId: number) => {
+  const index = roomDataStore.findIndex((room) => room.roomId === roomId);
+  if (index !== -1) {
+    roomDataStore.splice(index, 1);
+  }
+};
