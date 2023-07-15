@@ -5,12 +5,13 @@ import {
   getPlayerData,
   getAllRoomsData,
   addUserToRoom,
+  roomDataStore,
 } from '../db/db';
 import { connections } from '../http_server/index';
 
 class RoomController {
   createRoom(ws: WebSocket, name: string) {
-    const roomId = 0;
+    const roomId = roomDataStore.length ?? roomDataStore.length + 1;
 
     const user = getPlayerData(name);
 

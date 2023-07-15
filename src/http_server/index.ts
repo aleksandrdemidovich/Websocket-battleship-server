@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import * as fs from 'fs';
 import * as http from 'http';
 import * as path from 'path';
@@ -23,7 +24,8 @@ export const httpServer = http.createServer(function (req, res) {
   });
 });
 
-const wss = new WebSocket.Server({ server: httpServer });
+const WS_PORT = Number(process.env.WS_PORT ?? 3000);
+const wss = new WebSocket.Server({ port: WS_PORT });
 
 const playerController = new PlayerController();
 const roomController = new RoomController();
@@ -33,13 +35,31 @@ const botController = new BotController();
 
 export const connections: any = {};
 
-wss.on('connection', (ws: WebSocket) => {
+wss.on('listening', () => {
+  console.log(`Start websocket server on the ${WS_PORT} port!`);
+  const address = wss.address();
+  if (typeof address === 'string') {
+    console.log(`WebSocket server is listening on ${address}`);
+  } else {
+    console.log('WebSocket server is listening:');
+    console.log(`- Address: ${address.address}`);
+    console.log(`- Port: ${address.port}`);
+    console.log(`- Family: ${address.family}`);
+    console.log(`- Path: ${wss.options.path || '/'}`);
+    console.log(`- MaxPayload: ${wss.options.maxPayload || 'N/A'}`);
+  }
+});
+
+wss.on('connection', (ws: WebSocket, req: http.IncomingMessage) => {
+  const { remoteAddress, remotePort } = req.socket;
   console.log('New WebSocket connection established');
+  console.log(`A client connected from ${remoteAddress}:${remotePort}`);
 
   let userName: string;
 
   ws.on('message', (message: string) => {
     const request = JSON.parse(message);
+    console.log(request.type);
 
     switch (request.type) {
       case 'reg':
@@ -63,15 +83,18 @@ wss.on('connection', (ws: WebSocket) => {
         break;
       case 'single_play':
         botController.addBotToRoom(ws);
-        console.log(request);
         break;
 
       default:
         console.log('Unknown request type:', request.type);
     }
   });
+});
 
-  ws.on('close', () => {
-    console.log('WebSocket connection closed');
+process.on('SIGINT', () => {
+  console.log('Terminating WebSocket server...');
+  wss.close(() => {
+    console.log('WebSocket server closed.');
+    process.exit(0);
   });
 });

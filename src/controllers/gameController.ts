@@ -7,7 +7,7 @@ import {
   checkWin,
   updateWinners,
   clearRoomData,
-  getAllRoomsData
+  getAllRoomsData,
 } from '../db/db';
 import { connections } from '../http_server/index';
 import PlayerController from './playerController';
@@ -36,12 +36,15 @@ class GameController {
     const room = getRoomData(gameId);
 
     if (
-      (room?.turn === false && indexPlayer === 1) ||
-      (room?.turn === true && indexPlayer === 0)
+      (room?.turn === false && indexPlayer % 2 === 1) ||
+      (room?.turn === true && indexPlayer % 2 === 0)
     )
       return;
 
-    const userIdForAttack = indexPlayer === 0 ? 1 : 0;
+    const userIndexForAttack = room.roomUsers.findIndex(
+      (user: any) => user.index !== indexPlayer,
+    );
+    const userIdForAttack = userIndexForAttack;
 
     const status = checkAttack(
       room?.roomUsers[userIdForAttack]?.ships!,
@@ -52,7 +55,13 @@ class GameController {
       gameId,
       userIdForAttack,
     );
-    this.changeTurn(gameId);
+    if (status === 'killed' || status === 'shot') {
+      this.changeTurn(gameId);
+      this.changeTurn(gameId);
+    } else {
+      this.changeTurn(gameId);
+    }
+
     this.feedbackAttack(x, y, status!, indexPlayer, gameId);
 
     if (checkWin(gameId)) {
@@ -121,7 +130,12 @@ class GameController {
         userWS.send(
           JSON.stringify({
             type: 'turn',
-            data: JSON.stringify({ currentPlayer: room.turn === true ? 0 : 1 }),
+            data: JSON.stringify({
+              currentPlayer:
+                room.turn === true
+                  ? room.roomUsers[0].index
+                  : room.roomUsers[1].index,
+            }),
             id: 0,
           }),
         );
@@ -150,17 +164,19 @@ class GameController {
       clearRoomData(gameId);
       const allRooms = getAllRoomsData();
 
-    ws.send(
-      JSON.stringify({
-        type: 'update_room',
-        data: JSON.stringify(allRooms),
-        id: 0,
-      }),
-    );
+      ws.send(
+        JSON.stringify({
+          type: 'update_room',
+          data: JSON.stringify(allRooms),
+          id: 0,
+        }),
+      );
       return;
-    };
+    }
 
-    const winner = room?.roomUsers[indexPlayer];
+    const winner = room?.roomUsers.find(
+      (user: any) => user.index === indexPlayer,
+    );
     updateWinners(winner?.name!);
     playerController.updateWinners(gameId);
   }

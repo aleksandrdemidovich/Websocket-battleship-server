@@ -24,7 +24,7 @@ export interface Ship {
 }
 
 const playerDataStore: PlayerData[] = [];
-const roomDataStore: RoomData[] = [];
+export const roomDataStore: RoomData[] = [];
 const winnersDataStore: Winner[] = [];
 
 export const savePlayerData = (data: PlayerData) => {
@@ -69,13 +69,21 @@ export const addShipsToUser = (
 ) => {
   const room = getRoomData(roomId);
   if (room) {
-    room.roomUsers[indexPlayer] = {
-      ...room.roomUsers[indexPlayer],
-      ships: ships.map((ship: Ship) => ({
+    const user = room.roomUsers.find((user: any) => user.index === indexPlayer);
+    if (user) {
+      user.ships = ships.map((ship: Ship) => ({
         ...ship,
         hits: new Array(ship.length).fill(false),
-      })),
-    };
+      }));
+    }
+
+    // room.roomUsers[indexPlayer] = {
+    //   ...room.roomUsers[indexPlayer],
+    //   ships: ships.map((ship: Ship) => ({
+    //     ...ship,
+    //     hits: new Array(ship.length).fill(false),
+    //   })),
+    // };
     return room;
   }
 };
